@@ -12,7 +12,7 @@ Backend de uma plataforma de **agendamentos inteligentes**, desenvolvido em **Go
 
 1. Clone o repositório:
    ```
-   git clone https://github.com/seu-usuario/agendamento-api.git
+   git clone https://github.com/lazaaro01/agendamento-api.git
    cd agendamento-api
    ```
 

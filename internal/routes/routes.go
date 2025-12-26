@@ -9,21 +9,18 @@ import (
 
 func RegisterRoutes(r *gin.Engine) {
 
-	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
 	})
 
-	// Auth routes
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", handlers.Register)
 		auth.POST("/login", handlers.Login)
 	}
 
-	// Protected routes (JWT)
 	protected := r.Group("/")
 	protected.Use(middlewares.AuthMiddleware())
 	{

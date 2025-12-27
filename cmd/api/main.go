@@ -3,6 +3,7 @@ package main
 import (
 	"agendamento-api/internal/config"
 	"agendamento-api/internal/database"
+	"agendamento-api/internal/handlers"
 	"agendamento-api/internal/models"
 	"agendamento-api/internal/routes"
 
@@ -16,6 +17,8 @@ func main() {
 	database.DB.AutoMigrate(&models.User{})
 
 	r := gin.Default()
+
+	r.Use(handlers.CORSMiddleware())
 	routes.RegisterRoutes(r)
 
 	r.Run(":8080")

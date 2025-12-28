@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -20,12 +21,16 @@ func CreateAppointment(c *gin.Context) {
 
 	var input AppointmentInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("Erro no bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
 		return
 	}
 
+	log.Printf("Recebendo agendamento: UserID=%d, ServiceID=%d, StartTime=%v", userID, input.ServiceID, input.StartTime)
+
 	var service models.Service
 	if err := database.DB.First(&service, input.ServiceID).Error; err != nil {
+		log.Printf("Serviço %d não encontrado: %v", input.ServiceID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Serviço não encontrado"})
 		return
 	}
@@ -39,6 +44,7 @@ func CreateAppointment(c *gin.Context) {
 		Count(&count)
 
 	if count > 0 {
+		log.Printf("Conflito de horário detectado para o início %v", start)
 		c.JSON(http.StatusConflict, gin.H{"error": "Horário indisponível"})
 		return
 	}
@@ -51,7 +57,12 @@ func CreateAppointment(c *gin.Context) {
 		Status:    "CONFIRMED",
 	}
 
-	database.DB.Create(&appointment)
+	if err := database.DB.Create(&appointment).Error; err != nil {
+		log.Printf("Erro ao criar agendamento no banco: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao criar agendamento"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, appointment)
 }
 
@@ -59,7 +70,7 @@ func ListAppointments(c *gin.Context) {
 	userID := uint(c.MustGet("user_id").(float64))
 
 	var appointments []models.Appointment
-	database.DB.Where("user_id = ?", userID).Find(&appointments)
+	database.DB.Preload("Service").Where("user_id = ?", userID).Find(&appointments)
 
 	c.JSON(http.StatusOK, appointments)
 }
@@ -67,9 +78,19 @@ func ListAppointments(c *gin.Context) {
 func CancelAppointment(c *gin.Context) {
 	id := c.Param("id")
 
-	database.DB.Model(&models.Appointment{}).
+	result := database.DB.Model(&models.Appointment{}).
 		Where("id = ?", id).
 		Update("status", "CANCELED")
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao cancelar agendamento"})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Agendamento não encontrado"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Agendamento cancelado"})
 }

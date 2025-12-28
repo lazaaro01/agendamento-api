@@ -75,3 +75,20 @@ func Login(c *gin.Context) {
 		},
 	})
 }
+
+func GetProfile(c *gin.Context) {
+	userID := uint(c.MustGet("user_id").(float64))
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuário não encontrado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":    user.ID,
+		"name":  user.Name,
+		"email": user.Email,
+		"role":  user.Role,
+	})
+}

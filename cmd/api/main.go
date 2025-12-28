@@ -14,7 +14,7 @@ func main() {
 	config.LoadEnv()
 	database.Connect()
 
-	database.DB.AutoMigrate(&models.User{})
+	database.DB.AutoMigrate(&models.User{}, &models.Service{}, &models.Appointment{})
 
 	r := gin.Default()
 

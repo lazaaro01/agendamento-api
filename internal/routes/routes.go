@@ -24,6 +24,8 @@ func RegisterRoutes(r *gin.Engine) {
 	protected := r.Group("/")
 	protected.Use(middlewares.AuthMiddleware())
 	{
+		protected.GET("/auth/profile", handlers.GetProfile)
+
 		protected.POST("/services", handlers.CreateService)
 		protected.GET("/services", handlers.ListServices)
 
